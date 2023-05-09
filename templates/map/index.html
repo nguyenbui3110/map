@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+{% block tittle %}
+index
+{% endblock tittle %}
+{% block script %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initMap"
+            async defer></script>
+<script>
+    let locationData = {{ location|safe }};
+    let markers = {};
+
+    function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 10,
+        center: { lat: locationData['device1'].lat, lng: locationData['device1'].long },
+        });
+        const infowindow = new google.maps.InfoWindow();
+        for (const [device, locate] of Object.entries(locationData)) {
+        const marker = new google.maps.Marker({
+            position: { lat: locate.lat, lng: locate.long },
+            map: map,
+            title: device,
+        });
+        marker.addListener("click", () => {
+            infowindow.setContent(device);
+            infowindow.open(map, marker);
+        });
+        markers[device] = marker;
+        }
+        updateLocationData();
+    }
+
+    function updateLocationData() {
+        setInterval(() => {
+        fetch('location')
+            .then(response => response.json())
+            .then(data => {
+            locationData = data;
+            for (const [device, locate] of Object.entries(locationData)) {
+                markers[device].setPosition({ lat: locate.lat, lng: locate.long });
+            }
+            })
+            .catch(error => {
+            console.error('Error fetching location data:', error);
+            });
+        }, 5000);  // Update location data every 5s
+    }
+    </script>
+{% endblock script %}
+{% block initMap %}
+onload="initMap()"
+{% endblock initMap %}
+
+{% block content %}
+<div id="map" style="height: 500px;"></div>
+{% endblock content %}
+
+
