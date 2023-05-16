@@ -22,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-3zfku$saxirhfnot!6tobqnt5!met65ckm3rk_q8t)#quk!*g6'
-GOOGLE_MAPS_API_KEY='AIzaSyCtSA5ZdMkAx0sU80U9XFit1RwELYkZSqo'
-RECAPCHA_KEY='6LdAbkwlAAAAAAXLWN_BOb0oCDFfQvlDhvNsJJkk'
-RECAPCHA_SECRET='6LdAbkwlAAAAAOKthsfopj0Hzw4WQvnTpXZEhR3D'
+GOOGLE_MAPS_API_KEY = 'AIzaSyCtSA5ZdMkAx0sU80U9XFit1RwELYkZSqo'
+RECAPCHA_KEY = '6LdAbkwlAAAAAAXLWN_BOb0oCDFfQvlDhvNsJJkk'
+RECAPCHA_SECRET = '6LdAbkwlAAAAAOKthsfopj0Hzw4WQvnTpXZEhR3D'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -42,9 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'map',
-    'users',
     'device',
-    
+
 ]
 
 MIDDLEWARE = [
