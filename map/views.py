@@ -26,6 +26,8 @@ database = app.database()
 
 # Create your views here.
 def dashboard(request):
+    if not request.user.is_authenticated:
+        return redirect('login_account')
     gps = dict(database.child("gps").get().val())
     print(gps)
     context = {
@@ -66,3 +68,13 @@ def logout_account(request):
     else:
         logout(request)
         return redirect('login_account')
+
+def camera(request):
+    if not request.user.is_authenticated:
+        return redirect('login_account')
+    return render(request, 'map/camera.html')
+
+def get_image(request):
+    image_base64 = database.child("image").get().val()
+    # Return the base64 string as a JSON response
+    return JsonResponse({'image_base64': image_base64})
