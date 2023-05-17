@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
 from django.http import HttpResponse
+import json
 
 config = {
     "apiKey": "AIzaSyCtSA5ZdMkAx0sU80U9XFit1RwELYkZSqo",
@@ -46,9 +47,6 @@ def location_view(request):
 
 
 def login_account(request):
-    # if request.method == 'POST':
-    # if request.user.is_authenticated:
-    #     return redirect('dashboard')
 
     if request.method == 'POST':
         username = request.POST["username"]
@@ -78,3 +76,62 @@ def get_image(request):
     image_base64 = database.child("image").get().val()
     # Return the base64 string as a JSON response
     return JsonResponse({'image_base64': image_base64})
+
+def table(request):
+    if not request.user.is_authenticated:
+        return redirect('login_account')
+    devices= dict(database.child("gps").get().val())
+    auto= database.child("auto").get().val()
+    if auto == 1:
+        auto = "auto"
+    else:
+        auto = "manual"
+    context={
+        'devices':devices,
+        'mode':auto,
+    }
+    print(devices)
+    return render(request, 'map/deviceTable.html',context)
+
+def update_status(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        device_key = data.get('deviceKey')
+        new_status = data.get('newStatus')
+        database.child("gps").child(device_key).update({"status": new_status})
+        print(device_key)
+        print(new_status)
+        # Return a JSON response to indicate success
+        response = {'status': 'success'}
+        return JsonResponse(response)
+    
+def update_mode(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        new_mode = data.get('newMode')
+        if new_mode == "auto":
+            new_mode = 1
+        else:
+            new_mode = 0
+        database.child("auto").set(new_mode)
+        print(new_mode)
+        # Return a JSON response to indicate success
+        response = {'status': 'success'}
+        return JsonResponse(response)
+    
+def fetch_data(request):
+    # Retrieve the updated data from the database or any other source
+    devices= dict(database.child("gps").get().val())
+    auto= database.child("auto").get().val()
+    if auto == 1:
+        auto = "auto"
+    else:
+        auto = "manual"
+
+    # Prepare the response data
+    data = {
+        'devices': devices,
+        'mode': auto,
+    }
+
+    return JsonResponse(data)

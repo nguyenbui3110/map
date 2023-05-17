@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% csrf_token %}
+{% load static %}
+{% block tittle %}
+Device management
+{% endblock tittle %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="text-dark mb-4">Device table</h3>
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <p class="text-primary m-0 fw-bold" id="modeLabel">mode: {{ mode }}</p>
+            <button id="modeButton" class="btn btn-primary">Switch to {% if mode == 'auto' %}manual {%else%} auto{% endif %}</button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive table mt-2" id="dataTable" role="grid" aria-describedby="dataTable_info">
+                <table class="table my-0" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>device</th>
+                            <th>long</th>
+                            <th>lat</th>
+                            <th>status</th>
+                            <th>Switch</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, value in devices.items %}
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td>{{ value.long }}</td>
+                            <td>{{ value.lat }}</td>
+                            <td id="status-{{ key }}">{{ value.status }}%</td>
+                            <td>
+                                <input type="range" min="0" max="100" id="switch-{{ key }}" value="{{ value.status }}" step="25" onchange="updateStatus('{{ key }}', this.value)" {% if mode == 'auto' %}disabled{% endif %}>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const modeLabel = document.getElementById('modeLabel');
+    const modeButton = document.getElementById('modeButton');
+
+    // Attach event listener to the mode button
+    modeButton.addEventListener('click', toggleMode);
+
+    function toggleMode() {
+        const currentMode = modeLabel.textContent;
+
+        // Update the mode label and button text accordingly
+        if (currentMode === 'mode: auto') {
+            modeLabel.textContent = 'mode: manual';
+            modeButton.textContent = 'Switch to Auto';
+
+            // Enable all switch inputs
+            const switches = document.querySelectorAll('input[type="range"]');
+            switches.forEach((switchInput) => {
+                switchInput.disabled = false;
+            });
+        } else {
+            modeLabel.textContent = 'mode: auto';
+            modeButton.textContent = 'Switch to Manual';
+
+            // Disable all switch inputs
+            const switches = document.querySelectorAll('input[type="range"]');
+            switches.forEach((switchInput) => {
+                switchInput.disabled = true;
+            });
+        }
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const url = '/update-mode/';
+
+        const data = JSON.stringify({
+            newMode: currentMode === 'mode: auto' ? 'manual' : 'auto',
+        });
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.send(data);
+    }
+    function updateStatus(deviceKey, newStatus) {
+        // Send AJAX request to Django server
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const url = '/update-status/';
+
+        const data = JSON.stringify({
+            'deviceKey': deviceKey,
+            'newStatus': newStatus,
+        });
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Update the status value in the table cell
+                const statusCell = document.getElementById('status-' + deviceKey);
+                statusCell.textContent = newStatus+'%';
+            }
+        }; 
+        xhr.send(data);
+    }
+    // Refresh the table every  seconds
+    setInterval(refreshTable, 5000);
+
+    function refreshTable() {
+        if(modeLabel.textContent === 'mode: manual') {
+            return;
+        }
+        // Fetch the updated data from the server
+        fetch('/fetch-data/')
+            .then(response => response.json())
+            .then(data => {
+                // Update the table content with the updated data
+                const tableBody = document.querySelector('#dataTable tbody');
+                tableBody.innerHTML = '';
+
+                for (const [key, value] of Object.entries(data.devices)) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${key}</td>
+                        <td>${value.long}</td>
+                        <td>${value.lat}</td>
+                        <td id="status-${key}">${value.status}%</td>
+                        <td>
+                            <input type="range" id="switch-${key}" min="0" max="100" value="${value.status}" step="25" onchange="updateStatus('${key}', this.value)" ${data.mode === 'auto' ? 'disabled' : ''}>
+                        </td>
+                    `;
+
+                    tableBody.appendChild(row);
+                }
+
+                // Update the mode label and button text
+                modeLabel.textContent = `mode: ${data.mode}`;
+                modeButton.textContent = data.mode === 'auto' ? 'Switch to Manual' : 'Switch to Auto';
+            });
+    }
+</script>
+{% endblock content %}
