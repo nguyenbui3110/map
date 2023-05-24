@@ -98,7 +98,7 @@ def update_status(request):
         data = json.loads(request.body.decode('utf-8'))
         device_key = data.get('deviceKey')
         new_status = data.get('newStatus')
-        database.child("gps").child(device_key).update({"status": new_status})
+        database.child("gps").child(device_key).update({"status": int(new_status)})
         print(device_key)
         print(new_status)
         # Return a JSON response to indicate success
