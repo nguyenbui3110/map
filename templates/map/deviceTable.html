@@ -112,13 +112,12 @@ Device management
     setInterval(refreshTable, 5000);
 
     function refreshTable() {
-        if(modeLabel.textContent === 'mode: manual') {
-            return;
-        }
         // Fetch the updated data from the server
         fetch('/fetch-data/')
             .then(response => response.json())
             .then(data => {
+                modeLabel.textContent = `mode: ${data.mode}`;
+                modeButton.textContent = data.mode === 'auto' ? 'Switch to Manual' : 'Switch to Auto';
                 // Update the table content with the updated data
                 const tableBody = document.querySelector('#dataTable tbody');
                 tableBody.innerHTML = '';
